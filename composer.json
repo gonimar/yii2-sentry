@@ -1,0 +1,32 @@
+{
+    "name": "gonimar/yii2-sentry",
+    "description": "Yii2 log target for Sentry",
+    "type": "yii2-extension",
+    "license": "MIT",
+    "keywords": [
+        "sentry",
+        "yii2"
+    ],
+    "authors": [
+        {
+            "name": "Сергей Гонимар",
+            "email": "sergey.gonimar@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^7.3",
+        "yiisoft/yii2": "^2.0",
+        "sentry/sdk": "^2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "gonimar\\sentry\\": "src"
+        }
+    },
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://asset-packagist.org"
+        }
+    ]
+}
