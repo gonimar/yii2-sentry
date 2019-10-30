@@ -43,6 +43,13 @@ class Target extends BaseTarget
     protected $options;
 
     /**
+     * @var array fields from `Yii::$app->user->getIdentity` store to Sentry user.
+     * Default store user id and user ip fields
+     * ['email', 'username']
+     */
+    public $userIdentityFields = [];
+
+    /**
      * @inheritdoc
      */
     public function init()
@@ -50,6 +57,7 @@ class Target extends BaseTarget
         init(ArrayHelper::merge($this->options, [
             'dsn' => $this->dsn,
             'environment' => YII_ENV,
+            'release' => Yii::$app->id . '@' . Yii::$app->version,
         ]));
     }
 
@@ -76,6 +84,7 @@ class Target extends BaseTarget
                 'tags' => [
                     'category' => $category,
                     'page_locale' => Yii::$app->language,
+                    'module' => $this->getModulePath()
                 ],
                 'extra' => [],
             ];
@@ -89,6 +98,10 @@ class Target extends BaseTarget
 
             if ($identity = Yii::$app->user->getIdentity(false)) {
                 $user['id'] = $identity->getId();
+
+                foreach ($this->userIdentityFields as $userIdentityField) {
+                    $user[$userIdentityField] = $identity->$userIdentityField;
+                }
             }
 
             configureScope(function (Scope $scope) use ($user): void {
@@ -114,9 +127,7 @@ class Target extends BaseTarget
                 }
 
                 configureScope(function (Scope $scope) use ($data): void {
-                    foreach ($data['tags'] as $key => $value) {
-                        $scope->setTag($key, $value);
-                    }
+                    $scope->setTags($data['tags']);
                 });
 
                 $data['extra']['data'] = $text;
@@ -135,7 +146,7 @@ class Target extends BaseTarget
 
     /**
      * @param integer $level
-     * @return Severity
+     * @return string
      */
     public static function getLevelName($level)
     {
@@ -149,5 +160,25 @@ class Target extends BaseTarget
         ];
 
         return isset($levels[$level]) ? $levels[$level] : Severity::ERROR;
+    }
+
+    /**
+     * @return string|null
+     */
+    private function getModulePath()
+    {
+        if (!Yii::$app->controller) {
+            return null;
+        }
+
+        $moduleId = '';
+        $module = Yii::$app->controller->module;
+
+        while ($module !== null) {
+            $moduleId = $module->id . '/' . $moduleId;
+            $module = $module->module;
+        }
+
+        return trim($moduleId, '/');
     }
 }
