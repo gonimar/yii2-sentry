@@ -146,20 +146,24 @@ class Target extends BaseTarget
 
     /**
      * @param integer $level
-     * @return string
+     * @return Severity
      */
     public static function getLevelName($level)
     {
-        static $levels = [
-            Logger::LEVEL_ERROR => Severity::ERROR,
-            Logger::LEVEL_WARNING => Severity::WARNING,
-            Logger::LEVEL_INFO => Severity::INFO,
-            Logger::LEVEL_TRACE => Severity::DEBUG,
-            Logger::LEVEL_PROFILE_BEGIN => Severity::DEBUG,
-            Logger::LEVEL_PROFILE_END => Severity::DEBUG,
-        ];
-
-        return isset($levels[$level]) ? $levels[$level] : Severity::ERROR;
+        switch ($level) {
+            case Logger::LEVEL_WARNING:
+                return Severity::warning();
+            case Logger::LEVEL_INFO:
+                return Severity::info();
+            case Logger::LEVEL_TRACE:
+            case Logger::LEVEL_PROFILE:
+            case Logger::LEVEL_PROFILE_BEGIN:
+            case Logger::LEVEL_PROFILE_END:
+                return Severity::debug();
+            case Logger::LEVEL_ERROR:
+            default:
+                return Severity::error();
+        }
     }
 
     /**
