@@ -17,11 +17,11 @@ use function Sentry\captureMessage;
 use function Sentry\configureScope;
 use function Sentry\init;
 
-/**
- * Sentry log target for a Sentry.
+/* Target records log messages in a Sentry.
  *
  * @see https://docs.sentry.io/error-reporting/quickstart/?platform=php
  */
+
 class Target extends BaseTarget
 {
     /**
@@ -32,7 +32,8 @@ class Target extends BaseTarget
     public $dsn;
 
     /**
-     * @var bool Write the context.
+     * @var bool Write the context information.
+     * The default implementation will dump user information, system variables, etc.
      */
     public $context = true;
 
@@ -57,7 +58,7 @@ class Target extends BaseTarget
         init(ArrayHelper::merge($this->options, [
             'dsn' => $this->dsn,
             'environment' => YII_ENV,
-            'release' => Yii::$app->id . '@' . Yii::$app->version,
+            'release' => Yii::$app->id . '_' . YII_ENV . '@' . Yii::$app->version,
         ]));
     }
 
@@ -117,8 +118,10 @@ class Target extends BaseTarget
                     $data['message'] = $text['msg'];
                     unset($text['msg']);
                     $data['extra']['data'] = $text;
-                } else if (empty($data['message'])) {
-                    $data['message'] = VarDumper::export($text);
+                } else {
+                    if (empty($data['message'])) {
+                        $data['message'] = VarDumper::export($text);
+                    }
                 }
 
                 if (isset($text['tags'])) {
@@ -127,12 +130,14 @@ class Target extends BaseTarget
                 }
 
                 configureScope(function (Scope $scope) use ($data): void {
-                    $scope->setTags($data['tags']);
+                    foreach ($data['tags'] as $key => $value) {
+                        $scope->setTag($key, $value);
+                    }
                 });
 
                 $data['extra']['data'] = $text;
             } else {
-                $data['message'] = (string) $text;
+                $data['message'] = (string)$text;
             }
 
             if ($this->context) {
@@ -167,12 +172,12 @@ class Target extends BaseTarget
     }
 
     /**
-     * @return string|null
+     * @return string
      */
     private function getModulePath()
     {
         if (!Yii::$app->controller) {
-            return null;
+            return '';
         }
 
         $moduleId = '';
